@@ -11,7 +11,7 @@ cd /Users/zack/Desktop/microGPT
 uv run python -m novel_gpt train --config mini --max_steps 1000
 
 # 生成文本
-uv run python -m novel_gpt generate checkpoints/best.pt --prompt "Once upon a time"
+uv run python -m novel_gpt generate checkpoints/best.pt --prompt "天下大势"
 
 # 交互模式
 uv run python -m novel_gpt generate checkpoints/best.pt --interactive
@@ -83,6 +83,7 @@ text = tok.decode(tokens)             # "Hello, world!"
 ```
 
 **为什么用 tiktoken**：
+
 - 子词分词，比字符级更高效
 - 词表 50257，平衡了效率和泛化
 - 与 GPT-2/GPT-3 兼容，可加载预训练权重
@@ -102,6 +103,7 @@ train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
 ```
 
 **缓存机制**：
+
 - 首次运行：下载文本 → 编码 → 保存 `.tokens` 文件
 - 后续运行：直接加载 `.tokens`，跳过编码
 
@@ -120,6 +122,7 @@ GPT(
 ```
 
 **Block 结构**：
+
 ```
 x → LayerNorm → MultiHead Attention → 残差连接
                                          ↓
@@ -127,6 +130,7 @@ x → LayerNorm → MLP (4x expansion)    → 残差连接 → output
 ```
 
 **M2 适配**：
+
 ```python
 # 自动检测设备
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -154,6 +158,7 @@ for batch in train_loader:
 ```
 
 **关键技巧**：
+
 - 梯度裁剪防止梯度爆炸
 - 权重衰减正则化
 - 学习率预热稳定训练初期
@@ -165,18 +170,19 @@ for batch in train_loader:
 for _ in range(max_new_tokens):
     logits = model(tokens)              # 前向传播
     logits = logits[-1] / temperature   # 温度缩放
-    
+
     # Top-k 采样
     top_k = 40
     v, _ = torch.topk(logits, top_k)
     logits[logits < v[-1]] = -inf
-    
+
     probs = softmax(logits)
     next_token = multinomial(probs)     # 按概率采样
     tokens.append(next_token)
 ```
 
 **温度参数**：
+
 - `temperature = 0.5`：保守，更确定性
 - `temperature = 0.8`：平衡
 - `temperature = 1.0+`：创造性，更多随机性
@@ -187,11 +193,11 @@ for _ in range(max_new_tokens):
 
 ### 预设配置
 
-| 配置 | 参数量 | n_layer | n_embd | n_head | block_size | 用途 |
-|------|--------|---------|--------|--------|------------|------|
-| mini | ~3.3M  | 2       | 64     | 2      | 128        | 快速测试 |
-| default | ~7.2M | 4      | 128    | 4      | 256        | 标准训练 |
-| small | ~38M  | 6       | 256    | 8      | 512        | 更强模型 |
+| 配置    | 参数量 | n_layer | n_embd | n_head | block_size | 用途     |
+| ------- | ------ | ------- | ------ | ------ | ---------- | -------- |
+| mini    | ~3.3M  | 2       | 64     | 2      | 128        | 快速测试 |
+| default | ~7.2M  | 4       | 128    | 4      | 256        | 标准训练 |
+| small   | ~38M   | 6       | 256    | 8      | 512        | 更强模型 |
 
 ### 查看配置
 
@@ -262,21 +268,21 @@ uv run python -m novel_gpt generate checkpoints/best.pt \
 
 ### 训练步数
 
-| 模型大小 | 建议步数 | 预期 loss | 预计时间 (M2) |
-|---------|---------|-----------|---------------|
-| mini (3.3M) | 5,000 | ~5.0 | ~30 分钟 |
-| default (7.2M) | 10,000 | ~4.5 | ~2 小时 |
-| small (38M) | 20,000 | ~4.0 | ~8 小时 |
+| 模型大小       | 建议步数 | 预期 loss | 预计时间 (M2) |
+| -------------- | -------- | --------- | ------------- |
+| mini (3.3M)    | 5,000    | ~5.0      | ~30 分钟      |
+| default (7.2M) | 10,000   | ~4.5      | ~2 小时       |
+| small (38M)    | 20,000   | ~4.0      | ~8 小时       |
 
 ### Loss 参考
 
-| Loss | 生成质量 |
-|------|----------|
-| > 8.0 | 随机字符 |
-| 6.0-8.0 | 学习词频，无意义 |
+| Loss    | 生成质量           |
+| ------- | ------------------ |
+| > 8.0   | 随机字符           |
+| 6.0-8.0 | 学习词频，无意义   |
 | 4.5-6.0 | 简单短语，开始连贯 |
-| 3.5-4.5 | 短句连贯，有语法 |
-| < 3.5 | 长文本连贯 |
+| 3.5-4.5 | 短句连贯，有语法   |
+| < 3.5   | 长文本连贯         |
 
 ---
 
@@ -315,6 +321,7 @@ numpy >= 1.24.0     # 数值计算
 ```
 
 安装：
+
 ```bash
 uv sync
 ```
@@ -323,15 +330,15 @@ uv sync
 
 ## 与原 novel.py 对比
 
-| 特性 | 原 novel.py | 新 novel_gpt |
-|------|-------------|--------------|
-| 分词 | 字符级 (vocab≈27) | tiktoken (vocab=50257) |
-| 自动微分 | 手写 Value 类 | PyTorch |
-| 设备 | CPU | MPS (M2 GPU) |
-| 批处理 | 单样本 | 批量训练 |
-| 参数量 | ~15K | 3.3M - 38M |
-| 数据 | 人名列表 | 小说文本 |
-| 上下文 | 16 tokens | 128-512 tokens |
+| 特性     | 原 novel.py       | 新 novel_gpt           |
+| -------- | ----------------- | ---------------------- |
+| 分词     | 字符级 (vocab≈27) | tiktoken (vocab=50257) |
+| 自动微分 | 手写 Value 类     | PyTorch                |
+| 设备     | CPU               | MPS (M2 GPU)           |
+| 批处理   | 单样本            | 批量训练               |
+| 参数量   | ~15K              | 3.3M - 38M             |
+| 数据     | 人名列表          | 小说文本               |
+| 上下文   | 16 tokens         | 128-512 tokens         |
 
 ---
 
@@ -343,14 +350,16 @@ A: 训练步数不够。继续训练到 loss < 5.0。
 
 ### Q: 训练很慢？
 
-A: 
+A:
+
 1. 确认使用了 MPS：日志应显示 `Using device: mps`
 2. 减小 batch_size
 3. 使用 mini 配置快速验证
 
 ### Q: 内存不足？
 
-A: 
+A:
+
 1. 减小 `block_size`
 2. 减小 `batch_size`
 3. 使用更小的配置
