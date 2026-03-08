@@ -25,9 +25,9 @@ class Tokenizer(ABC):
 
 
 class TiktokenTokenizer(Tokenizer):
-    """tiktoken 分词器 - 使用 GPT-2 编码"""
+    """tiktoken 分词器 - 使用 cl100k_base (支持中英文)"""
     
-    def __init__(self, encoding_name: str = "gpt2"):
+    def __init__(self, encoding_name: str = "cl100k_base"):
         self.encoding = tiktoken.get_encoding(encoding_name)
         self._vocab_size = self.encoding.n_vocab
     

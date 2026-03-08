@@ -15,7 +15,7 @@ class ModelConfig:
     n_embd: int = 128          # 嵌入维度
     n_head: int = 4            # 注意力头数
     block_size: int = 256      # 最大上下文长度
-    vocab_size: int = 50257    # tiktoken GPT-2 词表大小
+    vocab_size: int = 100277   # tiktoken cl100k_base 词表大小 (支持中英文)
     dropout: float = 0.1       # Dropout 比率
     
     @property
@@ -61,23 +61,8 @@ class DataConfig:
     cache_dir: str = "data/cache"
     tokenizer_type: Literal["tiktoken", "char"] = "tiktoken"
     
-    # Project Gutenberg 小说列表 (经典英文小说)
-    novels: list = field(default_factory=lambda: [
-        # Pride and Prejudice - Jane Austen
-        "https://www.gutenberg.org/files/1342/1342-0.txt",
-        # Alice in Wonderland - Lewis Carroll
-        "https://www.gutenberg.org/files/11/11-0.txt",
-        # Frankenstein - Mary Shelley
-        "https://www.gutenberg.org/files/84/84-0.txt",
-        # A Tale of Two Cities - Charles Dickens
-        "https://www.gutenberg.org/files/98/98-0.txt",
-        # The Great Gatsby - F. Scott Fitzgerald (Canadian copyright expired)
-        # Note: Check local copyright before using
-        # Sherlock Holmes - Arthur Conan Doyle
-        "https://www.gutenberg.org/files/1661/1661-0.txt",
-        # The Time Machine - H.G. Wells
-        "https://www.gutenberg.org/files/35/35-0.txt",
-    ])
+    # 中文小说训练数据（手动放置在 data/ 目录）
+    novels: list = field(default_factory=list)
 
 
 @dataclass

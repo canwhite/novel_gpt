@@ -91,30 +91,35 @@ def prepare_data(config: Config, tokenizer: Tokenizer) -> Tuple[Dataset, Dataset
     data_dir = Path(data_config.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     
-    # 下载小说
+    # 加载所有文本文件
     combined_path = data_dir / "novels_combined.txt"
-    
+
     if not combined_path.exists():
-        print("Downloading novels...")
+        print("Loading text files from data directory...")
         all_texts = []
-        
-        for url in tqdm(data_config.novels, desc="Downloading"):
-            filename = url.split("/")[-1].replace(".txt", "") + ".txt"
-            save_path = data_dir / filename
-            
-            if not save_path.exists():
-                success = download_novel(url, str(save_path))
-                if not success:
-                    continue
-            
-            with open(save_path, "r", encoding="utf-8") as f:
-                all_texts.append(f.read())
-        
+
+        # 自动加载 data 目录下所有 .txt 文件
+        txt_files = sorted(data_dir.glob("*.txt"))
+        print(f"Found {len(txt_files)} text files")
+
+        for txt_file in tqdm(txt_files, desc="Loading files"):
+            try:
+                with open(txt_file, "r", encoding="utf-8") as f:
+                    text = f.read()
+                    if text.strip():  # 只添加非空文件
+                        all_texts.append(text)
+                        print(f"  - {txt_file.name}: {len(text):,} characters")
+            except Exception as e:
+                print(f"Failed to load {txt_file}: {e}")
+
+        if not all_texts:
+            raise ValueError(f"No text files found in {data_dir}. Please add some .txt files.")
+
         # 合并所有文本
         combined_text = "\n\n".join(all_texts)
         with open(combined_path, "w", encoding="utf-8") as f:
             f.write(combined_text)
-        
+
         print(f"Combined text: {len(combined_text):,} characters")
     
     # 编码整个数据集
