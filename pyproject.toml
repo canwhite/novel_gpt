@@ -1,0 +1,27 @@
+[project]
+name = "novel-gpt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
+    "torch>=2.0.0",
+    "tiktoken>=0.5.0",
+    "tqdm>=4.66.0",
+    "numpy>=1.24.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["novel_gpt"]
+
+[tool.setuptools.package-dir]
+novel_gpt = "src"
+
+[tool.uv]
+package = true
